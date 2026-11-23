@@ -37,7 +37,7 @@
     "prepack": "node scripts/build.ts"
   },
   "dependencies": {
-    "wrangler": "4.162.0"
+    "wrangler": "4.166.0"
   },
   "devDependencies": {
     "@cloudflare/vitest-plugin": "^1.8.2",
