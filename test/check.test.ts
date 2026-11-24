@@ -19,10 +19,7 @@ const http = (extra = "") =>
   monitor(`  - name: A\n    url: https://a.example/health\n${extra}`) as Extract<Monitor, { type: "http" }>;
 
 const heartbeat = (extra = "") =>
-  monitor(`  - name: Job\n    type: heartbeat\n    period: 1h\n${extra}`) as Extract<
-    Monitor,
-    { type: "heartbeat" }
-  >;
+  monitor(`  - name: Job\n    type: heartbeat\n    period: 1h\n${extra}`) as Extract<Monitor, { type: "heartbeat" }>;
 
 /** Newest first, one sample per minute ending at `now`. */
 function samples(now: number, oks: boolean[], degraded: boolean[] = []): RecentSample[] {
@@ -48,7 +45,10 @@ describe("statusMatches", () => {
 });
 
 describe("runHttpCheck", () => {
-  const respond = (init: ResponseInit, body: string | null = null) => async () => new Response(body, init);
+  const respond =
+    (init: ResponseInit, body: string | null = null) =>
+    async () =>
+      new Response(body, init);
 
   it("passes on an expected status", async () => {
     const s = await runHttpCheck(http(), respond({ status: 204 }));

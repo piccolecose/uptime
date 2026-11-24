@@ -19,7 +19,11 @@ const sh = (cmd: string, args: string[], cwd: string) => execFileSync(cmd, args,
 try {
   sh("pnpm", ["pack", "--pack-destination", scratch], ".");
   sh("npm", ["pack", "--pack-destination", scratch], "packages/create-uptime");
-  const tgz = (prefix: string) => join(scratch, readdirSync(scratch).find((f) => f.startsWith(prefix))!);
+  const tgz = (prefix: string) =>
+    join(
+      scratch,
+      readdirSync(scratch).find((f) => f.startsWith(prefix))!,
+    );
   const [tarball, creator] = [tgz("joshghent-uptime-"), tgz("create-uptime-")];
 
   // Installing both tarballs together satisfies create-uptime's pin on the

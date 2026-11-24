@@ -16,7 +16,7 @@ through, no per-monitor pricing, no vendor holding your incident history.
 </picture>
 
 - HTTP/HTTPS checks with status, body and latency assertions
-- Heartbeat monitors: your cron pings *us*, and a missed ping is an incident
+- Heartbeat monitors: your cron pings _us_, and a missed ping is an incident
 - Alerts to [ntfy](https://ntfy.sh) and any webhook, globally or per monitor
 - 90 days of uptime bars, a filterable event history, and a JSON API
 - `/llms.txt` and a CORS-open JSON API, so an agent reads it in one fetch
@@ -67,11 +67,11 @@ title: Acme Status
 description: Live availability for everything we run.
 link: https://acme.com
 
-retain_days: 7          # raw check results kept; the 90-day bars use rollups
-day_down_below: 99.5    # a day is red only below this pass rate; amber above it
-day_degraded_below: 99.5  # and amber only when under 99.5% of checks were clean
+retain_days: 7 # raw check results kept; the 90-day bars use rollups
+day_down_below: 99.5 # a day is red only below this pass rate; amber above it
+day_degraded_below: 99.5 # and amber only when under 99.5% of checks were clean
 
-defaults:               # inherited by every monitor
+defaults: # inherited by every monitor
   interval: 1m
   timeout: 10s
   expect_status: 2xx
@@ -99,18 +99,18 @@ monitors:
 
 ### Top-level keys
 
-| Key | Type | Default | Meaning |
-|---|---|---|---|
-| `version` | int | `1` | Which shape of this file it is. A release that changes the shape upgrades older files in memory, so an update never needs you to edit it |
-| `title` | string | `Status` | Page title and header |
-| `description` | string | — | Sub-line under the header, and the meta description |
-| `link` | URL | — | Where the header logo links; usually your product |
-| `retain_days` | int > 0 | `7` | Days of raw check results kept. The 90-day bars read daily rollups, so this only bounds the recent-window alarm rules |
-| `day_down_below` | 0–100 | `100` | A day's bar goes red only when its pass rate is below this percentage; failures above it colour the day amber. `100` makes any failed check a red day |
-| `day_degraded_below` | 0–100 | `100` | A day's bar goes amber only when the share of its checks that passed in time — not failed, not slower than `degraded_ms` — is below this percentage. `100` makes any single slow or failed check an amber day |
-| `defaults` | map | `{}` | Inherited by every monitor |
-| `notify` | map | — | Where alerts go |
-| `monitors` | list | — | At least one required |
+| Key                  | Type    | Default  | Meaning                                                                                                                                                                                                       |
+| -------------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `version`            | int     | `1`      | Which shape of this file it is. A release that changes the shape upgrades older files in memory, so an update never needs you to edit it                                                                      |
+| `title`              | string  | `Status` | Page title and header                                                                                                                                                                                         |
+| `description`        | string  | —        | Sub-line under the header, and the meta description                                                                                                                                                           |
+| `link`               | URL     | —        | Where the header logo links; usually your product                                                                                                                                                             |
+| `retain_days`        | int > 0 | `7`      | Days of raw check results kept. The 90-day bars read daily rollups, so this only bounds the recent-window alarm rules                                                                                         |
+| `day_down_below`     | 0–100   | `100`    | A day's bar goes red only when its pass rate is below this percentage; failures above it colour the day amber. `100` makes any failed check a red day                                                         |
+| `day_degraded_below` | 0–100   | `100`    | A day's bar goes amber only when the share of its checks that passed in time — not failed, not slower than `degraded_ms` — is below this percentage. `100` makes any single slow or failed check an amber day |
+| `defaults`           | map     | `{}`     | Inherited by every monitor                                                                                                                                                                                    |
+| `notify`             | map     | —        | Where alerts go                                                                                                                                                                                               |
+| `monitors`           | list    | —        | At least one required                                                                                                                                                                                         |
 
 Unknown keys are rejected rather than ignored, at every level — a typo is a
 lint failure, not a setting that silently does nothing.
@@ -122,27 +122,27 @@ reaches HTTP monitors.
 
 ### Monitor options
 
-| Key | Applies to | Default | Meaning |
-|---|---|---|---|
-| `name` | both | — | Required. Shown on the card |
-| `id` | both | slug of `name` | Stable key used in the database, the JSON and `/ping/:id`. Lowercase `a-z`, `0-9` and `-`, unique. Change it and the monitor's history starts over |
-| `description` | both | — | Sub-line on the card |
-| `type` | both | `http` | `http` or `heartbeat` |
-| `interval` | both | `60s` | How often to check. On a heartbeat this is how often its freshness is re-evaluated, not how often you have to ping — that is `period` |
-| `timeout` | both | `10s` | Request timeout. Only bites on HTTP |
-| `failures_before_alarm` | both | `2` | Consecutive failures that open an incident |
-| `failing_for` | both | — | Failure streak duration that opens an incident |
-| `degraded_ms` | both | — | Slower than this and a passing check counts as degraded, not down. Only bites on HTTP |
-| `notify` | both | inherits global | `ntfy` and/or `webhook` for this monitor, per target |
-| `url` | http | — | Required. What to request |
-| `method` | http | `GET` | Any HTTP method; upper-cased for you |
-| `headers` | http | — | Request headers |
-| `body` | http | — | Request body |
-| `expect_status` | http | `2xx` | `200`, `[200, 204]`, or a class like `2xx` |
-| `expect_body` | http | — | Substring the response body must contain. Only set it when you need it — it forces the body to be read, which counts toward latency |
-| `period` | heartbeat | — | Required. How often the job is expected to ping |
-| `grace` | heartbeat | `0` | Extra slack on top of `period` before a missing ping counts |
-| `token` | heartbeat | — | Required on the ping if set. Use `${VAR}` |
+| Key                     | Applies to | Default         | Meaning                                                                                                                                            |
+| ----------------------- | ---------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`                  | both       | —               | Required. Shown on the card                                                                                                                        |
+| `id`                    | both       | slug of `name`  | Stable key used in the database, the JSON and `/ping/:id`. Lowercase `a-z`, `0-9` and `-`, unique. Change it and the monitor's history starts over |
+| `description`           | both       | —               | Sub-line on the card                                                                                                                               |
+| `type`                  | both       | `http`          | `http` or `heartbeat`                                                                                                                              |
+| `interval`              | both       | `60s`           | How often to check. On a heartbeat this is how often its freshness is re-evaluated, not how often you have to ping — that is `period`              |
+| `timeout`               | both       | `10s`           | Request timeout. Only bites on HTTP                                                                                                                |
+| `failures_before_alarm` | both       | `2`             | Consecutive failures that open an incident                                                                                                         |
+| `failing_for`           | both       | —               | Failure streak duration that opens an incident                                                                                                     |
+| `degraded_ms`           | both       | —               | Slower than this and a passing check counts as degraded, not down. Only bites on HTTP                                                              |
+| `notify`                | both       | inherits global | `ntfy` and/or `webhook` for this monitor, per target                                                                                               |
+| `url`                   | http       | —               | Required. What to request                                                                                                                          |
+| `method`                | http       | `GET`           | Any HTTP method; upper-cased for you                                                                                                               |
+| `headers`               | http       | —               | Request headers                                                                                                                                    |
+| `body`                  | http       | —               | Request body                                                                                                                                       |
+| `expect_status`         | http       | `2xx`           | `200`, `[200, 204]`, or a class like `2xx`                                                                                                         |
+| `expect_body`           | http       | —               | Substring the response body must contain. Only set it when you need it — it forces the body to be read, which counts toward latency                |
+| `period`                | heartbeat  | —               | Required. How often the job is expected to ping                                                                                                    |
+| `grace`                 | heartbeat  | `0`             | Extra slack on top of `period` before a missing ping counts                                                                                        |
+| `token`                 | heartbeat  | —               | Required on the ping if set. Use `${VAR}`                                                                                                          |
 
 Durations are `500ms`, `30s`, `5m`, `24h`, `2d`, or a bare number of seconds.
 
@@ -220,13 +220,13 @@ A notification that fails is logged; it never blocks a check from recording.
 
 ## Endpoints
 
-| Path | What |
-|---|---|
-| `GET /` | The status page. `?monitor=<id>` filters the event history to one service |
-| `GET /api/status` | The same data as JSON, CORS-open |
-| `GET \| POST /ping/:id` | Heartbeat receiver |
-| `GET /health` | Liveness, the version you are running, and whether the database is up to date |
-| `GET /llms.txt` | The whole reference — endpoints, JSON shape, every config key — as plain text |
+| Path                    | What                                                                          |
+| ----------------------- | ----------------------------------------------------------------------------- |
+| `GET /`                 | The status page. `?monitor=<id>` filters the event history to one service     |
+| `GET /api/status`       | The same data as JSON, CORS-open                                              |
+| `GET \| POST /ping/:id` | Heartbeat receiver                                                            |
+| `GET /health`           | Liveness, the version you are running, and whether the database is up to date |
+| `GET /llms.txt`         | The whole reference — endpoints, JSON shape, every config key — as plain text |
 
 ### For agents
 
@@ -268,7 +268,7 @@ only ever have one open at a time — no duplicate alerts if a cron overlaps.
 
 The event history is built from both. An incident needs its alarm rule to trip;
 a bar goes red on a single failed check and yellow on a single slow one, neither
-of which alarms. So the history lists incidents *and* the bad days no incident
+of which alarms. So the history lists incidents _and_ the bad days no incident
 covers, which is what makes every colour on the page traceable to a row. It
 shows five, expands to the rest in place, and filters to one service.
 

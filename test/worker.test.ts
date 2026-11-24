@@ -76,7 +76,7 @@ describe("GET /", () => {
 
 describe("event history", () => {
   const badDay = (monitor: string, daysAgo: number, fail = 1, degraded = 0) => {
-    const day = new Date((Date.now() - daysAgo * 86400_000)).toISOString().slice(0, 10);
+    const day = new Date(Date.now() - daysAgo * 86400_000).toISOString().slice(0, 10);
     return env.DB.prepare("INSERT INTO daily (monitor, day, ok, fail, degraded) VALUES (?, ?, 100, ?, ?)")
       .bind(monitor, day, fail, degraded)
       .run();
@@ -234,7 +234,10 @@ describe("scheduled", () => {
 
     // Heartbeats that have never been pinged record nothing, so only the HTTP
     // monitors show up.
-    const httpIds = config.monitors.filter((m) => m.type === "http").map((m) => m.id).sort();
+    const httpIds = config.monitors
+      .filter((m) => m.type === "http")
+      .map((m) => m.id)
+      .sort();
     const { results } = await env.DB.prepare("SELECT DISTINCT monitor FROM samples").all<{ monitor: string }>();
     expect(results.map((r) => r.monitor).sort()).toEqual(httpIds);
     expect(seen).toHaveLength(httpIds.length);

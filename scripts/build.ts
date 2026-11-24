@@ -33,7 +33,9 @@ await build({
   target: "node22",
   // yaml's Node build is CommonJS and requires Node builtins, which an ES
   // module bundle can only do through a require it is given.
-  banner: { js: 'import { createRequire as __createRequire } from "node:module"; const require = __createRequire(import.meta.url);' },
+  banner: {
+    js: 'import { createRequire as __createRequire } from "node:module"; const require = __createRequire(import.meta.url);',
+  },
 });
 
 copyFileSync("types/index.d.ts", "dist/index.d.ts");

@@ -39,10 +39,7 @@ export function statements(sql: string): string[] {
 }
 
 async function appliedNames(db: D1Database): Promise<Set<string>> {
-  const [, rows] = await db.batch<{ name: string }>([
-    db.prepare(LEDGER),
-    db.prepare(`SELECT name FROM d1_migrations`),
-  ]);
+  const [, rows] = await db.batch<{ name: string }>([db.prepare(LEDGER), db.prepare(`SELECT name FROM d1_migrations`)]);
   return new Set(rows!.results.map((r) => r.name));
 }
 
