@@ -17,6 +17,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
+      - run: pnpm lint:code
+      - run: pnpm format:check
       # status.yaml references secrets by name only; any value proves the shape.
       # If your config uses more `${VAR}`s than these, add them here — the lint
       # names the one it could not resolve, so a red build tells you which.
@@ -24,7 +26,15 @@ jobs:
         env:
           NTFY_URL: https://ntfy.example/ci
           HEARTBEAT_TOKEN: ci
-      - run: pnpm test
+      # Fails below the line threshold in vitest.config.ts.
+      - run: pnpm test:coverage
+      - name: Coverage summary
+        if: always() && hashFiles('coverage/coverage-summary.json') != ''
+        run: |
+          jq -r '.total | "| Metric | Covered | % |\n|---|---|---|",
+            (to_entries[] | select(.value | type == "object" and .total > 0)
+              | "| \(.key) | \(.value.covered)/\(.value.total) | \(.value.pct)% |")' \
+            coverage/coverage-summary.json | tee -a "$GITHUB_STEP_SUMMARY"
 
   # The package as a deployment gets it: packed, installed into a fresh copy of
   # the template with npm, and run through that deployment's own check.
