@@ -164,13 +164,15 @@ monitors:
   });
 
   it("names the variable when a ${VAR} is unset", () => {
-    expect(problems(`
+    expect(
+      problems(`
 notify:
   ntfy: \${NTFY_URL}
 monitors:
   - name: A
     url: https://a.example
-`)).toEqual([expect.stringContaining("${NTFY_URL} is referenced but not set")]);
+`),
+    ).toEqual([expect.stringContaining("${NTFY_URL} is referenced but not set")]);
   });
 
   it("parses heartbeat monitors", () => {
@@ -203,29 +205,35 @@ monitors:
   });
 
   it("rejects unknown keys, so a typo is not silently ignored", () => {
-    expect(problems(`
+    expect(
+      problems(`
 monitors:
   - name: A
     url: https://a.example
     timout: 5s
-`)).toEqual([expect.stringContaining("timout")]);
+`),
+    ).toEqual([expect.stringContaining("timout")]);
   });
 
   it("rejects a bad url", () => {
-    expect(problems(`
+    expect(
+      problems(`
 monitors:
   - name: A
     url: not-a-url
-`)).toEqual([expect.stringContaining("monitors.0.url")]);
+`),
+    ).toEqual([expect.stringContaining("monitors.0.url")]);
   });
 
   it("rejects an unparseable duration with the field path", () => {
-    expect(problems(`
+    expect(
+      problems(`
 monitors:
   - name: A
     url: https://a.example
     interval: whenever
-`)).toEqual([expect.stringContaining("monitors.0.interval")]);
+`),
+    ).toEqual([expect.stringContaining("monitors.0.interval")]);
   });
 
   it("rejects an empty file and a monitor-less file", () => {
@@ -236,9 +244,7 @@ monitors:
   });
 
   it("reports YAML syntax errors rather than throwing raw", () => {
-    expect(problems("monitors:\n  - name: A\n   url: bad-indent")).toEqual([
-      expect.stringContaining("YAML syntax"),
-    ]);
+    expect(problems("monitors:\n  - name: A\n   url: bad-indent")).toEqual([expect.stringContaining("YAML syntax")]);
   });
 
   it("accepts a status class or an explicit list", () => {

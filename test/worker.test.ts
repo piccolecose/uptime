@@ -76,7 +76,7 @@ describe("GET /", () => {
 
 describe("event history", () => {
   const badDay = (monitor: string, daysAgo: number, fail = 1, degraded = 0) => {
-    const day = new Date((Date.now() - daysAgo * 86400_000)).toISOString().slice(0, 10);
+    const day = new Date(Date.now() - daysAgo * 86400_000).toISOString().slice(0, 10);
     return env.DB.prepare("INSERT INTO daily (monitor, day, ok, fail, degraded) VALUES (?, ?, 100, ?, ?)")
       .bind(monitor, day, fail, degraded)
       .run();
@@ -212,6 +212,34 @@ describe("GET /ping/:id", () => {
     expect(await lastPing()).toBeNull();
   });
 
+  it("accepts a lower-case bearer scheme", async () => {
+    const res = await get(`/ping/${heartbeat.id}`, { headers: { authorization: `bearer ${token}` } });
+    expect(res.status).toBe(200);
+    expect(await lastPing()).not.toBeNull();
+  });
+
+  it("accepts a POST as well as a GET", async () => {
+    const res = await get(`/ping/${heartbeat.id}?token=${token}`, { method: "POST" });
+    expect(res.status).toBe(200);
+    expect(await lastPing()).not.toBeNull();
+  });
+
+  it("rejects a wrong bearer token and records nothing", async () => {
+    const res = await get(`/ping/${heartbeat.id}`, { method: "POST", headers: { authorization: "Bearer nope" } });
+    expect(res.status).toBe(401);
+    expect(await lastPing()).toBeNull();
+  });
+
+  it("takes pings without a token when the monitor sets none", async () => {
+    const open = createWorker("monitors:\n  - name: Open job\n    type: heartbeat\n    period: 1h\n");
+    const ctx = createExecutionContext();
+    const res = await open.fetch(new Request("https://status.test/ping/open-job"), env, ctx);
+    await waitOnExecutionContext(ctx);
+
+    expect(res.status).toBe(200);
+    expect(await env.DB.prepare("SELECT last_ping FROM heartbeats WHERE monitor = 'open-job'").first()).not.toBeNull();
+  });
+
   it("404s for an unknown id and for an HTTP monitor", async () => {
     expect((await get("/ping/nope")).status).toBe(404);
     expect((await get(`/ping/${http.id}`)).status).toBe(404);
@@ -234,13 +262,104 @@ describe("scheduled", () => {
 
     // Heartbeats that have never been pinged record nothing, so only the HTTP
     // monitors show up.
-    const httpIds = config.monitors.filter((m) => m.type === "http").map((m) => m.id).sort();
+    const httpIds = config.monitors
+      .filter((m) => m.type === "http")
+      .map((m) => m.id)
+      .sort();
     const { results } = await env.DB.prepare("SELECT DISTINCT monitor FROM samples").all<{ monitor: string }>();
     expect(results.map((r) => r.monitor).sort()).toEqual(httpIds);
     expect(seen).toHaveLength(httpIds.length);
   });
 
   afterEach(() => vi.unstubAllGlobals());
+});
+
+describe("failures", () => {
+  const request = async (w: ReturnType<typeof createWorker>, path: string, e: Env) => {
+    const ctx = createExecutionContext();
+    const res = await w.fetch(new Request(`https://status.test${path}`), e, ctx);
+    await waitOnExecutionContext(ctx);
+    return res;
+  };
+
+  /** A database whose first `failures` batches reject, as when D1 is briefly unavailable. */
+  const flaky = (failures: number): Env => {
+    let left = failures;
+    const db = {
+      prepare: (q: string) => env.DB.prepare(q),
+      batch: (stmts: D1PreparedStatement[]) =>
+        left-- > 0 ? Promise.reject(new Error("D1 unavailable")) : env.DB.batch(stmts),
+    } as unknown as D1Database;
+    return { ...env, DB: db };
+  };
+
+  beforeEach(() => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it("answers a plain 500 for an unexpected error", async () => {
+    const res = await request(createWorker(source), "/", flaky(1));
+    expect(res.status).toBe(500);
+    expect(res.headers.get("content-type")).toMatch(/text\/plain/);
+    expect(await res.text()).toBe("internal error\n");
+  });
+
+  it("retries a failed migration on the next request", async () => {
+    const w = createWorker(source);
+    const e = flaky(1);
+    expect((await request(w, "/", e)).status).toBe(500);
+    expect((await request(w, "/", e)).status).toBe(200);
+  });
+
+  it("shows a broken config as a page that lists every problem, escaped", async () => {
+    const bad = createWorker("monitors: [<script>");
+    const res = await request(bad, "/", env);
+    const html = await res.text();
+
+    expect(res.status).toBe(500);
+    expect(html).toContain("status.yaml is invalid");
+    expect(html).toContain("<li><code>");
+    expect(html).not.toContain("<script>");
+    expect(html).toContain("&lt;script&gt;");
+  });
+
+  it("reports /health as degraded rather than failing when the database is unreachable", async () => {
+    const broken = {
+      prepare: () => {
+        throw new Error("D1 unavailable");
+      },
+      batch: () => Promise.reject(new Error("D1 unavailable")),
+    } as unknown as D1Database;
+    const res = await request(createWorker(source), "/health", { ...env, DB: broken });
+
+    expect(res.status).toBe(503);
+    expect(await res.json()).toMatchObject({ status: "degraded", migrationsApplied: false });
+  });
+});
+
+describe("last checked", () => {
+  const checkedAgo = async (seconds: number) => {
+    const ts = Math.floor(Date.now() / 1000) - seconds;
+    await env.DB.prepare(
+      "INSERT INTO samples (monitor, ts, ok, degraded, status, latency_ms, error) VALUES (?, ?, 1, 0, 200, 10, NULL)",
+    )
+      .bind(http.id, ts)
+      .run();
+    return get("/").then((r) => r.text());
+  };
+
+  it("says just now for a fresh check", async () => {
+    expect(await checkedAgo(5)).toContain("checked just now");
+  });
+
+  it("counts minutes, hours and days", async () => {
+    expect(await checkedAgo(5 * 60 + 10)).toContain("checked 5m ago");
+    await env.DB.exec("DELETE FROM samples");
+    expect(await checkedAgo(3 * 3600 + 60)).toContain("checked 3h ago");
+    await env.DB.exec("DELETE FROM samples");
+    expect(await checkedAgo(2 * 86400 + 60)).toContain("checked 2d ago");
+  });
 });
 
 describe("GET /health", () => {

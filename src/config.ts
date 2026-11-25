@@ -18,16 +18,14 @@ export function slug(name: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-const duration = z
-  .union([z.string(), z.number()])
-  .transform((v, ctx) => {
-    try {
-      return parseDuration(v);
-    } catch (e) {
-      ctx.addIssue({ code: "custom", message: (e as Error).message });
-      return z.NEVER;
-    }
-  });
+const duration = z.union([z.string(), z.number()]).transform((v, ctx) => {
+  try {
+    return parseDuration(v);
+  } catch (e) {
+    ctx.addIssue({ code: "custom", message: (e as Error).message });
+    return z.NEVER;
+  }
+});
 
 /** `200`, `[200, 204]`, or a class like `2xx`. */
 const expectStatus = z.union([
@@ -65,7 +63,10 @@ const shared = {
 
 const httpMonitor = z.strictObject({
   name: z.string().min(1),
-  id: z.string().regex(/^[a-z0-9-]+$/, "id must be lowercase a-z, 0-9 and -").optional(),
+  id: z
+    .string()
+    .regex(/^[a-z0-9-]+$/, "id must be lowercase a-z, 0-9 and -")
+    .optional(),
   description: z.string().optional(),
   type: z.literal("http").optional(),
   url: z.string().url(),
@@ -80,7 +81,10 @@ const httpMonitor = z.strictObject({
 
 const heartbeatMonitor = z.strictObject({
   name: z.string().min(1),
-  id: z.string().regex(/^[a-z0-9-]+$/, "id must be lowercase a-z, 0-9 and -").optional(),
+  id: z
+    .string()
+    .regex(/^[a-z0-9-]+$/, "id must be lowercase a-z, 0-9 and -")
+    .optional(),
   description: z.string().optional(),
   type: z.literal("heartbeat"),
   /** How often the job is expected to ping. */
@@ -233,9 +237,7 @@ function interpolate<T>(value: T, env: Record<string, unknown>, missing: Set<str
   }
   if (Array.isArray(value)) return value.map((v) => interpolate(v, env, missing)) as T;
   if (value && typeof value === "object") {
-    return Object.fromEntries(
-      Object.entries(value).map(([k, v]) => [k, interpolate(v, env, missing)]),
-    ) as T;
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, interpolate(v, env, missing)])) as T;
   }
   return value;
 }
@@ -275,9 +277,7 @@ export function loadConfig(source: string, env: Record<string, unknown> = {}): C
 
   const parsed = configSchema.safeParse(interpolated);
   if (!parsed.success) {
-    throw new ConfigError(
-      parsed.error.issues.map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`),
-    );
+    throw new ConfigError(parsed.error.issues.map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`));
   }
 
   const c = parsed.data;

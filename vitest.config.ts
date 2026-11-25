@@ -18,5 +18,13 @@ export default defineConfig({
   ],
   test: {
     setupFiles: ["./test/apply-migrations.ts"],
+    // Off for `pnpm test`; `pnpm test:coverage` (and CI) turns it on. istanbul
+    // because v8 coverage does not reach inside the workerd pool.
+    coverage: {
+      provider: "istanbul",
+      include: ["src/**/*.ts"],
+      reporter: ["text", "json-summary"],
+      thresholds: { lines: 75 },
+    },
   },
 });

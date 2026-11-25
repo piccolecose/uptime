@@ -1,0 +1,5 @@
+# Generated: release-please, pnpm and `wrangler types` own these.
+CHANGELOG.md
+.release-please-manifest.json
+pnpm-lock.yaml
+worker-configuration.d.ts

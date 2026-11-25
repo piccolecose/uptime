@@ -49,7 +49,7 @@ in the package, not the template.
 ## House style
 
 - Small functions, obvious names. Boring beats clever.
-- Comments explain *why*, not what. The existing ones are the reference.
+- Comments explain _why_, not what. The existing ones are the reference.
 - Let errors reach the one handler in `src/index.ts` rather than swallowing them.
 - No new dependency without a reason that survives being said out loud.
 - Nothing unindexed in the cron path. It runs 1,440 times a day against tables
@@ -89,12 +89,12 @@ Pull requests are squash-merged, and the title becomes the commit it reads, so
 titles follow [Conventional Commits](https://www.conventionalcommits.org) — a
 check enforces it:
 
-| Title | Release |
-|---|---|
-| `fix: …` | patch |
-| `feat: …` | minor |
-| `feat!: …` | major |
-| `chore:`, `docs:`, `ci:`, `test:`, `refactor:` | none |
+| Title                                          | Release |
+| ---------------------------------------------- | ------- |
+| `fix: …`                                       | patch   |
+| `feat: …`                                      | minor   |
+| `feat!: …`                                     | major   |
+| `chore:`, `docs:`, `ci:`, `test:`, `refactor:` | none    |
 
 Every merge to `main` updates a release pull request that bumps both packages
 — `create-uptime` and its exact pin on `@joshghent/uptime` move together — and

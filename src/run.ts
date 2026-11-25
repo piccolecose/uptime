@@ -72,8 +72,7 @@ async function checkOne(
   lastPing: number | null,
   fetchImpl: typeof fetch,
 ): Promise<RunResult | null> {
-  const sample =
-    m.type === "http" ? await runHttpCheck(m, fetchImpl) : checkHeartbeat(m, lastPing, now);
+  const sample = m.type === "http" ? await runHttpCheck(m, fetchImpl) : checkHeartbeat(m, lastPing, now);
   // A heartbeat that has never been pinged has no data yet.
   if (sample === null) return null;
 

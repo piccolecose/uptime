@@ -27,17 +27,17 @@
       "binding": "DB",
       "database_name": "uptime",
       // From `npx wrangler d1 create uptime`.
-      "database_id": "REPLACE_WITH_YOUR_D1_DATABASE_ID"
-    }
+      "database_id": "REPLACE_WITH_YOUR_D1_DATABASE_ID",
+    },
   ],
 
   // The cron fires every minute; each monitor is skipped unless its own
   // `interval` has elapsed.
   "triggers": {
-    "crons": ["* * * * *"]
+    "crons": ["* * * * *"],
   },
 
   "observability": {
-    "enabled": true
-  }
+    "enabled": true,
+  },
 }

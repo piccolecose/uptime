@@ -72,8 +72,7 @@ function card(m: MonitorStatus, now: number, windowDays: number): string {
   const uptime = m.uptime === null ? "—" : `${(m.uptime * 100).toFixed(2)}%`;
   // Named for what it is measured over. A monitor added on Tuesday has two days
   // of data, and saying "over the last 90 days" about them is not true.
-  const measured =
-    m.uptime === null ? "no data yet" : `${uptime} over ${plural(m.observedDays, "day")}`;
+  const measured = m.uptime === null ? "no data yet" : `${uptime} over ${plural(m.observedDays, "day")}`;
   const explain =
     m.uptime === null
       ? `${m.name} has recorded no checks yet`
@@ -125,7 +124,10 @@ function banner(s: Status): string {
       : s.overall === "degraded"
         ? ["Degraded performance", `Affected: ${names(wobbly)}`]
         : s.overall === "up"
-          ? ["All systems operational", `${s.monitors.length} monitor${s.monitors.length === 1 ? "" : "s"} checked continuously`]
+          ? [
+              "All systems operational",
+              `${s.monitors.length} monitor${s.monitors.length === 1 ? "" : "s"} checked continuously`,
+            ]
           : ["Waiting for the first check", "No results have been recorded yet"];
 
   return `<section class="banner banner--${s.overall}">
