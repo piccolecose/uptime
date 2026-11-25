@@ -72,9 +72,7 @@ export async function dailySince(db: D1Database, sinceDay: string): Promise<Dail
 }
 
 export async function openIncidents(db: D1Database): Promise<Map<string, Incident>> {
-  const { results } = await db
-    .prepare(`SELECT * FROM incidents WHERE resolved_at IS NULL`)
-    .all<Incident>();
+  const { results } = await db.prepare(`SELECT * FROM incidents WHERE resolved_at IS NULL`).all<Incident>();
   return new Map(results.map((i) => [i.monitor, i]));
 }
 

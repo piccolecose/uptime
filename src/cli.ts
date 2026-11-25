@@ -150,8 +150,16 @@ async function check() {
     console.log(`\nbooting on ${base}…`);
     const dev = wrangler(
       [
-        "dev", "--local", "--ip", "127.0.0.1", "--port", String(port),
-        "--persist-to", join(scratch, "state"), "--env-file", join(scratch, "vars.env"),
+        "dev",
+        "--local",
+        "--ip",
+        "127.0.0.1",
+        "--port",
+        String(port),
+        "--persist-to",
+        join(scratch, "state"),
+        "--env-file",
+        join(scratch, "vars.env"),
         "--show-interactive-dev-session=false",
       ],
       { quiet: true },

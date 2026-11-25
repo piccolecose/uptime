@@ -154,7 +154,10 @@ export async function buildStatus(d1: D1Database, config: Config, now: number): 
   const windowStart = dayStart(days[0]!);
   const [rows, last, open, incidents] = await Promise.all([
     db.dailySince(d1, days[0]!),
-    db.lastSamples(d1, config.monitors.map((m) => m.id)),
+    db.lastSamples(
+      d1,
+      config.monitors.map((m) => m.id),
+    ),
     db.openIncidents(d1),
     db.recentIncidents(d1, windowStart, EVENT_LIMIT),
   ]);

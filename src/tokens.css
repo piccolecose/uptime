@@ -57,7 +57,9 @@
   --tt-red-900: #610e0e;
   --tt-red-950: #3f0808;
 
-  --tt-font-sans: "Public Sans", "Public Sans Fallback", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --tt-font-sans:
+    "Public Sans", "Public Sans Fallback", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
   --tt-font-display: "Archivo", "Archivo Fallback", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --tt-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 
@@ -116,7 +118,7 @@
   --tt-radius-full: 9999px;
   --tt-border-1: 1px;
   --tt-border-2: 2px;
-  --tt-shadow-overlay: 0 4px 12px -2px rgba(20, 16, 10, 0.14), 0 2px 4px -2px rgba(20, 16, 10, 0.10);
+  --tt-shadow-overlay: 0 4px 12px -2px rgba(20, 16, 10, 0.14), 0 2px 4px -2px rgba(20, 16, 10, 0.1);
   --tt-shadow-overlay-lg: 0 16px 40px -8px rgba(20, 16, 10, 0.22), 0 4px 12px -4px rgba(20, 16, 10, 0.12);
 
   --tt-duration-instant: 0ms;

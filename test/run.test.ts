@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { loadConfig, type Config } from "../src/config.ts";
 import * as db from "../src/db.ts";
 import { dayKey } from "../src/check.ts";
+import { notify } from "../src/notify.ts";
 import { runChecks } from "../src/run.ts";
 import { buildStatus, dayStart, EVENT_LIMIT } from "../src/status.ts";
 
@@ -419,5 +420,98 @@ monitors:
   it("ignores days that fell out of the 90-day window", async () => {
     await day("site", dayKey(NOW - 120 * 86400), 100, 5);
     expect(await events(site())).toEqual([]);
+  });
+});
+
+describe("notify", () => {
+  const monitor = (extra: string) => config(`  - name: Site\n    url: https://site.test/health\n${extra}`).monitors[0]!;
+  const event = (m: ReturnType<typeof monitor>, kind: "down" | "up") => ({
+    monitor: m,
+    event: kind,
+    reason: "unexpected status 503",
+    at: NOW,
+  });
+
+  it("sends ntfy a loud urgent message when a monitor goes down", async () => {
+    const { impl, calls } = fakeFetch([]);
+    const m = monitor("");
+    await notify(event(m, "down"), impl);
+
+    const ntfy = calls.find((c) => c.url === "https://ntfy.test/topic")!;
+    expect(ntfy.headers).toMatchObject({ Title: "DOWN: Site", Priority: "urgent", Tags: "rotating_light" });
+    expect(ntfy.body).toBe("unexpected status 503");
+  });
+
+  it("sends ntfy a default priority message on recovery", async () => {
+    const { impl, calls } = fakeFetch([]);
+    await notify(event(monitor(""), "up"), impl);
+
+    const ntfy = calls.find((c) => c.url === "https://ntfy.test/topic")!;
+    expect(ntfy.headers).toMatchObject({ Title: "RECOVERED: Site", Priority: "default", Tags: "white_check_mark" });
+  });
+
+  it("posts the webhook a JSON body with an ISO timestamp", async () => {
+    const { impl, calls } = fakeFetch([]);
+    await notify(event(monitor(""), "down"), impl);
+
+    const hook = calls.find((c) => c.url === "https://hooks.test/incoming")!;
+    expect(hook.headers["content-type"]).toBe("application/json");
+    expect(JSON.parse(hook.body)).toEqual({
+      monitor: "site",
+      name: "Site",
+      event: "down",
+      reason: "unexpected status 503",
+      at: new Date(NOW * 1000).toISOString(),
+    });
+  });
+
+  it("sends the configured headers to each target", async () => {
+    const m = loadConfig(`
+notify:
+  ntfy:
+    url: https://ntfy.test/topic
+    headers:
+      Authorization: Bearer ntfy-secret
+  webhook:
+    url: https://hooks.test/incoming
+    headers:
+      x-key: abc
+monitors:
+  - name: Site
+    url: https://site.test/health
+`).monitors[0]!;
+    const { impl, calls } = fakeFetch([]);
+    await notify(event(m, "down"), impl);
+
+    expect(calls.find((c) => c.url.startsWith("https://ntfy"))!.headers.Authorization).toBe("Bearer ntfy-secret");
+    expect(calls.find((c) => c.url.startsWith("https://hooks"))!.headers["x-key"]).toBe("abc");
+  });
+
+  it("fires both targets and reports no errors when both succeed", async () => {
+    const { impl, calls } = fakeFetch([]);
+    expect(await notify(event(monitor(""), "down"), impl)).toEqual([]);
+    expect(calls.map((c) => c.url).sort()).toEqual(["https://hooks.test/incoming", "https://ntfy.test/topic"]);
+  });
+
+  it("returns a rejected fetch as an error and still reaches the other target", async () => {
+    const { impl, calls } = fakeFetch([new Error("ntfy unreachable")]);
+    const errors = await notify(event(monitor(""), "down"), impl);
+
+    expect(errors.map((e) => e.message)).toEqual(["ntfy unreachable"]);
+    expect(calls).toHaveLength(2);
+  });
+
+  it("returns a non-2xx response as an error naming the status", async () => {
+    const { impl } = fakeFetch([new Response(null, { status: 200 }), new Response(null, { status: 502 })]);
+    const errors = await notify(event(monitor(""), "down"), impl);
+
+    expect(errors.map((e) => e.message)).toEqual(["notify target returned 502"]);
+  });
+
+  it("does nothing for a monitor with no targets", async () => {
+    const m = loadConfig("monitors:\n  - name: Site\n    url: https://site.test/health\n").monitors[0]!;
+    const { impl, calls } = fakeFetch([]);
+    expect(await notify(event(m, "down"), impl)).toEqual([]);
+    expect(calls).toHaveLength(0);
   });
 });
